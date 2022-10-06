@@ -1,5 +1,9 @@
 FROM debian:bullseye-slim
 
+LABEL maintainer="gyb1314<gyb_1314@126.com>"
+
+COPY sources.list /etc/apt/sources.list
+
 RUN apt-get -y update && \
 	apt-get install -y \
 		libavutil-dev \
@@ -30,27 +34,39 @@ RUN apt-get -y update && \
 	apt-get clean && \
 	rm -rf /var/lib/apt/lists/*
 
+#copy thirdLibs
+ENV THIRDLIBS_HOME /thirdLibs
 
-RUN cd /tmp && \
-	wget https://github.com/cisco/libsrtp/archive/v2.3.0.tar.gz && \
-	tar xfv v2.3.0.tar.gz && \
-	cd libsrtp-2.3.0 && \
+RUN mkdir -p $THIRDLIBS_HOME
+
+COPY thirdLibs/libsrtp-2.4.2.tar.gz $THIRDLIBS_HOME 
+
+RUN cd $THIRDLIBS_HOME && \
+	tar xfv libsrtp-2.4.2.tar.gz && \
+	cd libsrtp-2.4.2 && \
 	./configure --prefix=/usr --enable-openssl && \
 	make shared_library && \
 	make install
 
-RUN cd /tmp && \
-	git clone https://gitlab.freedesktop.org/libnice/libnice && \
-	cd libnice && \
-	git checkout 0.1.17 && \
+COPY thirdLibs/libnice-0.1.17.tar.gz $THIRDLIBS_HOME
+
+RUN cd $THIRDLIBS_HOME && \
+	tar xfv libnice-0.1.17.tar.gz && \
+	cd libnice-0.1.17 && \
 	./autogen.sh && \
 	./configure --prefix=/usr && \
 	make && \
 	make install
 
-COPY . /usr/local/src/janus-gateway
+RUN mkdir -p /usr/local/src/janus-gateway
 
-RUN cd /usr/local/src/janus-gateway && \
+COPY thirdLibs/janus-gateway-1.1.0.tar.gz $THIRDLIBS_HOME
+
+#COPY . /usr/local/src/janus-gateway
+
+RUN cd $THIRDLIBS_HOME && \
+        tar xfv janus-gateway-1.1.0.tar.gz -C /usr/local/src && \
+	cd /usr/local/src/janus-gateway-1.1.0 && \
 	sh autogen.sh && \
 	./configure --enable-post-processing --prefix=/usr/local && \
 	make && \
