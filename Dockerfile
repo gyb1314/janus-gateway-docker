@@ -30,6 +30,7 @@ RUN apt-get -y update && \
 		build-essential \
 		wget \
 		git \
+		cmake \
 		gtk-doc-tools && \
 	apt-get clean && \
 	rm -rf /var/lib/apt/lists/*
@@ -58,17 +59,33 @@ RUN cd $THIRDLIBS_HOME && \
 	make && \
 	make install
 
-RUN mkdir -p /usr/local/src/janus-gateway
+COPY thirdLibs/libwebsockets-v3.2-stable.tar.gz $THIRDLIBS_HOME
+
+RUN cd $THIRDLIBS_HOME && \
+       tar xfv libwebsockets-v3.2-stable.tar.gz && \
+       cd libwebsockets && \
+       mkdir build && cd build && \
+       cmake -DLWS_MAX_SMP=1 -DLWS_WITHOUT_EXTENSIONS=0 -DCMAKE_INSTALL_PREFIX:PATH=/usr -DCMAKE_C_FLAGS="-fpic" .. && \
+       make && make install
+
+COPY thirdLibs/paho.mqtt.c-v1.3.11.tar.gz $THIRDLIBS_HOME
+
+RUN cd $THIRDLIBS_HOME && \
+       tar xfv paho.mqtt.c-v1.3.11.tar.gz && \
+       cd paho.mqtt.c && \
+       make && make install
+
+RUN mkdir -p /usr/local/janus/src
 
 COPY thirdLibs/janus-gateway-1.1.0.tar.gz $THIRDLIBS_HOME
 
 #COPY . /usr/local/src/janus-gateway
 
 RUN cd $THIRDLIBS_HOME && \
-        tar xfv janus-gateway-1.1.0.tar.gz -C /usr/local/src && \
-	cd /usr/local/src/janus-gateway-1.1.0 && \
+        tar xfv janus-gateway-1.1.0.tar.gz -C /usr/local/janus/src && \
+	cd /usr/local/janus/src/janus-gateway-1.1.0 && \
 	sh autogen.sh && \
-	./configure --enable-post-processing --prefix=/usr/local && \
+	./configure --enable-post-processing --prefix=/usr/local/janus && \
 	make && \
 	make install && \
 	make configs
@@ -115,12 +132,40 @@ COPY --from=0 /usr/lib/libnice.so.10.10.0 /usr/lib/libnice.so.10.10.0
 RUN ln -s /usr/lib/libnice.so.10.10.0 /usr/lib/libnice.so.10
 RUN ln -s /usr/lib/libnice.so.10.10.0 /usr/lib/libnice.so
 
-COPY --from=0 /usr/local/bin/janus /usr/local/bin/janus
-COPY --from=0 /usr/local/bin/janus-pp-rec /usr/local/bin/janus-pp-rec
-COPY --from=0 /usr/local/bin/janus-cfgconv /usr/local/bin/janus-cfgconv
-COPY --from=0 /usr/local/etc/janus /usr/local/etc/janus
-COPY --from=0 /usr/local/lib/janus /usr/local/lib/janus
-COPY --from=0 /usr/local/share/janus /usr/local/share/janus
+#COPY --from=0 /usr/lib/libwebsockets.so /usr/lib/libwebsockets.so
+COPY --from=0 /usr/lib/libwebsockets.so.15 /usr/lib/libwebsockets.so.15
+RUN ln -s /usr/lib/libwebsockets.so.15 /usr/lib/libwebsockets.so
+
+#COPY --from=0 /usr/local/lib/libpaho-mqtt3a.so /usr/local/lib/libpaho-mqtt3a.so
+#COPY --from=0 /usr/local/lib/libpaho-mqtt3a.so.1 /usr/local/lib/libpaho-mqtt3a.so.1
+COPY --from=0 /usr/local/lib/libpaho-mqtt3a.so.1.3 /usr/local/lib/libpaho-mqtt3a.so.1.3
+RUN ln -s /usr/local/lib/libpaho-mqtt3a.so.1 /usr/local/lib/libpaho-mqtt3a.so
+RUN ln -s /usr/local/lib/libpaho-mqtt3a.so.1.3 /usr/local/lib/libpaho-mqtt3a.so.1
+
+#COPY --from=0 /usr/local/lib/libpaho-mqtt3as.so /usr/local/lib/libpaho-mqtt3as.so
+#COPY --from=0 /usr/local/lib/libpaho-mqtt3as.so.1 /usr/local/lib/libpaho-mqtt3as.so.1
+COPY --from=0 /usr/local/lib/libpaho-mqtt3as.so.1.3 /usr/local/lib/libpaho-mqtt3as.so.1.3
+RUN ln -s /usr/local/lib/libpaho-mqtt3as.so.1 /usr/local/lib/libpaho-mqtt3as.so
+RUN ln -s /usr/local/lib/libpaho-mqtt3as.so.1.3 /usr/local/lib/libpaho-mqtt3as.so.1
+
+#COPY --from=0 /usr/local/lib/libpaho-mqtt3c.so /usr/local/lib/libpaho-mqtt3c.so
+#COPY --from=0 /usr/local/lib/libpaho-mqtt3c.so.1 /usr/local/lib/libpaho-mqtt3c.so.1
+COPY --from=0 /usr/local/lib/libpaho-mqtt3c.so.1.3 /usr/local/lib/libpaho-mqtt3c.so.1.3
+RUN ln -s /usr/local/lib/libpaho-mqtt3c.so.1 /usr/local/lib/libpaho-mqtt3c.so
+RUN ln -s /usr/local/lib/libpaho-mqtt3c.so.1.3 /usr/local/lib/libpaho-mqtt3c.so.1
+
+#COPY --from=0 /usr/local/lib/libpaho-mqtt3cs.so /usr/local/lib/libpaho-mqtt3cs.so
+#COPY --from=0 /usr/local/lib/libpaho-mqtt3cs.so.1 /usr/local/lib/libpaho-mqtt3cs.so.1
+COPY --from=0 /usr/local/lib/libpaho-mqtt3cs.so.1.3 /usr/local/lib/libpaho-mqtt3cs.so.1.3
+RUN ln -s /usr/local/lib/libpaho-mqtt3cs.so.1 /usr/local/lib/libpaho-mqtt3cs.so
+RUN ln -s /usr/local/lib/libpaho-mqtt3cs.so.1.3 /usr/local/lib/libpaho-mqtt3cs.so.1
+
+COPY --from=0 /usr/local/janus/bin/janus /usr/local/bin/janus
+COPY --from=0 /usr/local/janus/bin/janus-pp-rec /usr/local/bin/janus-pp-rec
+COPY --from=0 /usr/local/janus/bin/janus-cfgconv /usr/local/bin/janus-cfgconv
+COPY --from=0 /usr/local/janus/etc/janus /usr/local/etc/janus
+COPY --from=0 /usr/local/janus/lib/janus /usr/local/lib/janus
+COPY --from=0 /usr/local/janus/share/janus /usr/local/share/janus
 
 ENV BUILD_DATE=${BUILD_DATE}
 ENV GIT_BRANCH=${GIT_BRANCH}
