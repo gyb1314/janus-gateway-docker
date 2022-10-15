@@ -1,6 +1,10 @@
 FROM debian:bullseye-slim
 
+
 LABEL maintainer="gyb1314<gyb_1314@126.com>"
+
+#ENV http_proxy=http://192.168.3.16:7078
+#ENV https_proxy=http://192.168.3.16:7078
 
 COPY sources.list /etc/apt/sources.list
 
@@ -92,6 +96,9 @@ RUN cd $THIRDLIBS_HOME && \
 
 FROM debian:bullseye-slim
 
+#ENV http_proxy=http://192.168.3.16:7078
+#ENV https_proxy=http://192.168.3.16:7078
+
 ARG BUILD_DATE="undefined"
 ARG GIT_BRANCH="undefined"
 ARG GIT_COMMIT="undefined"
@@ -160,12 +167,12 @@ COPY --from=0 /usr/local/lib/libpaho-mqtt3cs.so.1.3 /usr/local/lib/libpaho-mqtt3
 RUN ln -s /usr/local/lib/libpaho-mqtt3cs.so.1 /usr/local/lib/libpaho-mqtt3cs.so
 RUN ln -s /usr/local/lib/libpaho-mqtt3cs.so.1.3 /usr/local/lib/libpaho-mqtt3cs.so.1
 
-COPY --from=0 /usr/local/janus/bin/janus /usr/local/bin/janus
-COPY --from=0 /usr/local/janus/bin/janus-pp-rec /usr/local/bin/janus-pp-rec
-COPY --from=0 /usr/local/janus/bin/janus-cfgconv /usr/local/bin/janus-cfgconv
-COPY --from=0 /usr/local/janus/etc/janus /usr/local/etc/janus
-COPY --from=0 /usr/local/janus/lib/janus /usr/local/lib/janus
-COPY --from=0 /usr/local/janus/share/janus /usr/local/share/janus
+COPY --from=0 /usr/local/janus/bin/janus /usr/local/janus/bin/janus
+COPY --from=0 /usr/local/janus/bin/janus-pp-rec /usr/local/janus/bin/janus-pp-rec
+COPY --from=0 /usr/local/janus/bin/janus-cfgconv /usr/local/janus/bin/janus-cfgconv
+COPY --from=0 /usr/local/janus/etc/janus /usr/local/janus/etc/janus
+COPY --from=0 /usr/local/janus/lib/janus /usr/local/janus/lib/janus
+COPY --from=0 /usr/local/janus/share/janus /usr/local/janus/share/janus
 
 ENV BUILD_DATE=${BUILD_DATE}
 ENV GIT_BRANCH=${GIT_BRANCH}
@@ -181,4 +188,4 @@ EXPOSE 8000
 EXPOSE 7088
 EXPOSE 7089
 
-CMD ["/usr/local/bin/janus"]
+CMD ["/usr/local/janus/bin/janus"]
